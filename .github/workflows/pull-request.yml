@@ -75,7 +75,7 @@ jobs:
           npx serverless deploy --stage ${{needs.set_var.outputs.BRANCH_NAME}}
         env:
           SLS_CREDENTIALS_PATH: ./keyfile.json
-          BASE_PATH: /${{secrets.SERVICE_NAME}}-${{needs.set_var.outputs.BRANCH_NAME}}-${{secrets.SERVICE_NAME_FUNCTION}}
+          BASE_PATH: testing
           SLS_GCP_PROJECT: ${{secrets.SLS_GCP_PROJECT}}
           SLS_GCP_REGION: ${{secrets.SLS_GCP_REGION}}
   deploy_public:
