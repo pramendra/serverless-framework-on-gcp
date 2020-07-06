@@ -76,6 +76,7 @@ jobs:
           file_name: .env
       - name: Deploy function
         run: |
+          cat .env
           echo -n ${{ secrets.SLS_GCP_SA_KEY }} | base64 --decode > $SLS_CREDENTIALS_PATH
           npx serverless deploy --stage ${{needs.set_var.outputs.BRANCH_NAME}}
         env:
