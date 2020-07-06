@@ -163,3 +163,16 @@ gcloud functions add-iam-policy-binding sls-gcp-dev-first \
 --project [PROJECT-NAME] \
 --region asia-northeast1
 ```
+
+
+## Development
+
+### change the node version 
+```sh
+nvm use
+```
+### Install dependencies 
+```sh
+npm i
+```
+
