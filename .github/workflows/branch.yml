@@ -76,11 +76,13 @@ jobs:
 
       - name: Deploy function
         run: |
-          echo -n ${{ secrets.GCP_SA_KEY }} | base64 --decode > $CREDENTIALS_PATH
+          echo -n ${{ secrets.SLS_GCP_SA_KEY }} | base64 --decode > $CREDENTIALS_PATH
           npx serverless deploy --stage=${{needs.set_var.outputs.BRANCH_NAME}}
         env:
           CREDENTIALS_PATH: ./keyfile.json
           BASE_PATH: /${{secrets.SERVICE_NAME}}-${{needs.set_var.outputs.BRANCH_NAME}}-${{secrets.SERVICE_NAME_FUNCTION}}
+          SLS_GCP_PROJECT: ${{secrets.SLS_GCP_PROJECT}}
+          SLS_GCP_REGION: ${{secrets.SLS_GCP_REGION}}
 
   deploy_public:
     needs: [set_var, deploy]
@@ -94,13 +96,13 @@ jobs:
         uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
           version: '276.0.0'
-          service_account_email: ${{ secrets.GCP_SA_EMAIL }}
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          service_account_email: ${{ secrets.SLS_GCP_SA_EMAIL }}
+          service_account_key: ${{ secrets.SLS_GCP_SA_KEY }}
 
       - name: Make function public
         run: |
           gcloud functions add-iam-policy-binding ${{secrets.SERVICE_NAME}}-${{needs.set_var.outputs.BRANCH_NAME}}-${{secrets.SERVICE_NAME_FUNCTION}} \
           --member="allUsers" \
           --role="roles/cloudfunctions.invoker" \
-          --project ${{ secrets.GCP_PROJECT }} \
-          --region ${{ secrets.GCP_REGION }}
+          --project ${{ secrets.SLS_GCP_PROJECT }} \
+          --region ${{ secrets.SLS_GCP_REGION }}
