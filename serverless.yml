@@ -24,8 +24,8 @@ package:
 functions:
   first:
     handler: http
-    environment:
-      BASE_PATH: ${env.BASE_PATH}
+    events:
+      - http: path
   # NOTE: the following uses an "event" event (pubSub event in this case).
   # Please create the corresponding resources in the Google Cloud
   # before deploying this service through Serverless
