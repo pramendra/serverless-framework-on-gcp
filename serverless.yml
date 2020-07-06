@@ -7,8 +7,6 @@ provider:
   region: ${env:SLS_GCP_REGION}
   project: ${env:SLS_GCP_PROJECT}
   credentials: ${env:SLS_CREDENTIALS_PATH}
-  environment:
-    BASE_PATH: ${env.BASE_PATH}
 
 plugins:
   - serverless-google-cloudfunctions
@@ -26,6 +24,8 @@ package:
 functions:
   first:
     handler: http
+    environment:
+      BASE_PATH: ${env.BASE_PATH}
     events:
       - http: path
   # NOTE: the following uses an "event" event (pubSub event in this case).
