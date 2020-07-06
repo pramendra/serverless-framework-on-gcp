@@ -1,0 +1,107 @@
+name: CICD on Pull Request
+on:
+  - pull_request
+jobs:
+  set_var:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [10.18.1]
+    outputs:
+      BRANCH_NAME: ${{ steps.step1.outputs.BRANCH_NAME }}
+    name: set app variable ${{ matrix.node-version }}
+    steps:
+      - id: step1
+        run: echo "::set-output name=BRANCH_NAME::$(echo pr$(jq --raw-output .number "$GITHUB_EVENT_PATH"))"
+  test:
+    needs: set_var
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [10.18.1]
+    name: Setup, test & lint ${{ matrix.node-version }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Cache node modules
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+      - name: Installing dependencies
+        run: npm install --prefer-offline --no-audit
+
+  deploy:
+    needs: [set_var, test]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [10.18.1]
+    name: deploying using ${{ matrix.node-version }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Cache node modules
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+
+      - name: Installing dependencies
+        run: npm install --prefer-offline --no-audit
+      - name: Make envfile
+        uses: SpicyPizza/create-envfile@v1
+        with:
+          envkey_SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
+          file_name: .env
+      - name: Deploy function
+        run: |
+          cat .env
+          echo -n ${{ secrets.SLS_GCP_SA_KEY }} | base64 --decode > $SLS_CREDENTIALS_PATH
+          npx serverless deploy --stage ${{needs.set_var.outputs.BRANCH_NAME}}
+        env:
+          SLS_CREDENTIALS_PATH: ./keyfile.json
+          SLS_GCP_PROJECT: ${{secrets.SLS_GCP_PROJECT}}
+          SLS_GCP_REGION: ${{secrets.SLS_GCP_REGION}}
+  deploy_public:
+    needs: [set_var, deploy]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [10.18.1]
+    name: make deployment public using ${{ matrix.node-version }}
+    steps:
+      - name: Authenticate into Google Cloud Platform
+        uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        with:
+          version: '276.0.0'
+          service_account_email: ${{ secrets.SLS_GCP_SA_EMAIL }}
+          service_account_key: ${{ secrets.SLS_GCP_SA_KEY }}
+
+      - name: Make function public
+        run: |
+          gcloud functions add-iam-policy-binding ${{secrets.SERVICE_NAME}}-${{needs.set_var.outputs.BRANCH_NAME}}-${{secrets.SERVICE_NAME_FUNCTION}} \
+          --member="allUsers" \
+          --role="roles/cloudfunctions.invoker" \
+          --project ${{ secrets.SLS_GCP_PROJECT }} \
+          --region ${{ secrets.SLS_GCP_REGION }}
