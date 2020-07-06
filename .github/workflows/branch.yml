@@ -76,10 +76,10 @@ jobs:
 
       - name: Deploy function
         run: |
-          echo -n ${{ secrets.SLS_GCP_SA_KEY }} | base64 --decode > $CREDENTIALS_PATH
+          echo -n ${{ secrets.SLS_GCP_SA_KEY }} | base64 --decode > $SLS_CREDENTIALS_PATH
           npx serverless deploy --stage=${{needs.set_var.outputs.BRANCH_NAME}}
         env:
-          CREDENTIALS_PATH: ./keyfile.json
+          SLS_CREDENTIALS_PATH: ./keyfile.json
           BASE_PATH: /${{secrets.SERVICE_NAME}}-${{needs.set_var.outputs.BRANCH_NAME}}-${{secrets.SERVICE_NAME_FUNCTION}}
           SLS_GCP_PROJECT: ${{secrets.SLS_GCP_PROJECT}}
           SLS_GCP_REGION: ${{secrets.SLS_GCP_REGION}}
