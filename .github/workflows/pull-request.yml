@@ -72,7 +72,7 @@ jobs:
       - name: Make envfile
         uses: SpicyPizza/create-envfile@v1
         with:
-          SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
+          envkey_SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
           file_name: .env
       - name: Deploy function
         run: |
