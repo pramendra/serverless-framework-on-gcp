@@ -1,0 +1,39 @@
+name: CD on PR Cleanup
+on:
+  pull_request:
+    types: [closed]
+jobs:
+  remove:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [10.18.1]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+          fetch-depth: 1
+
+      - name: Cache node modules
+        uses: actions/cache@v1
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+      - name: Installing dependencies
+        run: npm install
+      - name: Remove function
+        run: |
+          echo -n ${{ secrets.SLS_GCP_SA_KEY }} | base64 --decode > $CREDENTIALS_PATH
+          npx serverless remove --stage pr$(jq --raw-output .number "$GITHUB_EVENT_PATH")
+        env:
+          CREDENTIALS_PATH: ./keyfile.json
+          SLS_GCP_PROJECT: ${{secrets.SLS_GCP_PROJECT}}
+          SLS_GCP_REGION: ${{secrets.SLS_GCP_REGION}}
