@@ -3,14 +3,15 @@ service: sls-gcp
 provider:
   name: google
   stage: dev
-  runtime: nodejs8
-  region: ${env:GCP_REGION}
-  project: ${env:GCP_PROJECT}
-  credentials: ${env:CREDENTIALS_PATH}
-  credentials: ~/.gcloud/sls-keyfile.json
+  runtime: nodejs10
+  region: ${env:SLS_GCP_REGION}
+  project: ${env:SLS_GCP_PROJECT}
+  credentials: ${env:SLS_CREDENTIALS_PATH}
 
 plugins:
   - serverless-google-cloudfunctions
+  - serverless-dotenv-plugin
+
 
 # needs more granular excluding in production as only the serverless provider npm
 # package should be excluded (and not the whole node_modules directory)
